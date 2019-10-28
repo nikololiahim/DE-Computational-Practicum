@@ -1,2 +1,7 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
-import sys
+import ui
+import solver
+
+
+
+if __name__ == "__main__":
+    pass
