@@ -82,34 +82,35 @@ class MainWindow:
             self.__setattr__(names[i-2]+"_entry", self.entry(self.frames[i][8]))
 
 
+        self.method_selected = IntVar()
+        method_names = ["Euler", "Improved Euler", "Runge-Kutta"]
+        method_values = [self.EULER, self.IMPROVED_EULER, self.RUNGE_KUTTA]
         for i in range(7, 10):
             self.frames[i][8] = Frame(root, background="white", bd=5)
             self.frames[i][8].grid(row=i, column=7, sticky=N + S + E + W, columnspan=3)
+            setattr(self, "method"+str(i-6),
+                    Radiobutton(self.frames[i][8],
+                                text=method_names[i-7],
+                                variable=self.method_selected,
+                                value=method_values[i-7],
+                                background='white')
+                    )
+            getattr(self, "method"+str(i-6)).pack(expand=True, anchor=W)
 
-        self.method_selected = IntVar()
-        self.method1= Radiobutton(self.frames[7][8],
-                                  text='Euler',
-                                  variable=self.method_selected,
-                                  value=self.EULER,
-                                  background='white')
-        self.method2 = Radiobutton(self.frames[8][8],
-                                   text='Improved Euler',
-                                   variable=self.method_selected,
-                                   value=self.IMPROVED_EULER,
-                                  background='white')
-        self.method3 = Radiobutton(self.frames[9][8],
-                                   text='Runge-Kutta',
-                                   variable=self.method_selected,
-                                   value=self.RUNGE_KUTTA,
-                                  background='white')
 
-        self.method1.pack(expand=True, anchor=W)
-        self.method2.pack(expand=True, anchor=W)
-        self.method3.pack(expand=True, anchor=W)
-
-        self.apply = Button(self.frames[10][9], text="Apply")
+        self.apply = Button(self.frames[10][9], text="Apply", command=self.gather_data)
         self.apply.pack(expand=True, fill=BOTH)
 
+
+    def gather_data(self):
+        names = ["x0", "y0", "X", "N"]
+        data = dict()
+        for i in names:
+            data[i+"_entry"] =  getattr(self, i+"_entry").get()
+        data['method'] = self.method_selected.get()
+        for i in data.keys():
+            print(i, data[i])
+        return data
 
 
 
