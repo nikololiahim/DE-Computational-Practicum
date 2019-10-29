@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter import messagebox
 
 
 
@@ -11,15 +12,15 @@ class MainWindow:
 
 
     @staticmethod
-    def entry(root):
+    def entry(root: Widget) -> Entry:
         entry = Entry(root, background="bisque", width=10)
         entry.pack(expand=True, fill=BOTH, side=RIGHT)
         return entry
 
 
     @staticmethod
-    def label(root, text):
-        label = Label(root, text=text)
+    def label(root: Widget, text: str)-> Label:
+        label = Label(root, text=text, justify=RIGHT)
         label.pack(expand=True, fill=BOTH)
         return label
 
@@ -81,7 +82,13 @@ class MainWindow:
             self.frames[i][8].grid(row=i, column=8, sticky=N + S + E + W, columnspan=3)
             self.__setattr__(names[i-2]+"_entry", self.entry(self.frames[i][8]))
 
+        # instantiating values
+        self.x0_entry.insert("0", "1")
+        self.y0_entry.insert("0", "1")
+        self.X_entry.insert("0", "9")
+        self.N_entry.insert("0", "9000")
 
+        # laying out radio box
         self.method_selected = IntVar()
         method_names = ["Euler", "Improved Euler", "Runge-Kutta"]
         method_values = [self.EULER, self.IMPROVED_EULER, self.RUNGE_KUTTA]
@@ -97,16 +104,25 @@ class MainWindow:
                     )
             getattr(self, "method"+str(i-6)).pack(expand=True, anchor=W)
 
+        self.method_selected.set(self.RUNGE_KUTTA)
 
+        # laying out button
         self.apply = Button(self.frames[10][9], text="Apply", command=self.gather_data)
         self.apply.pack(expand=True, fill=BOTH)
+
+        # binding 'Enter' key to 'Apply' button action
+        self.root.bind("<Return>", lambda event: self.apply.invoke())
 
 
     def gather_data(self):
         names = ["x0", "y0", "X", "N"]
         data = dict()
         for i in names:
-            data[i+"_entry"] =  getattr(self, i+"_entry").get()
+            try:
+                data[i + "_entry"] =  float(getattr(self, i + "_entry").get())
+            except ValueError:
+                messagebox.showerror("Input Error", "x0, y0, X and N should be decimal numbers!")
+                break
         data['method'] = self.method_selected.get()
         for i in data.keys():
             print(i, data[i])
