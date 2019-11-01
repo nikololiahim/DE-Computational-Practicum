@@ -36,8 +36,7 @@ class MainWindow:
         self.root = root
         self.root.title("DE Computational Practicum, v. " + self.VERSION)
         self.root.resizable(True, True)
-        self.root.geometry("640x360")
-
+        self.root.state('zoomed')
 
         self.frames = [[None]*12 for i in range(12)]
         # colors = ['snow', 'dim gray', 'blue', 'cyan',
@@ -125,7 +124,7 @@ class MainWindow:
         data = dict()
         for i in names:
             try:
-                data[i + "_entry"] =  eval(getattr(self, i + "_entry").get())
+                data[i] =  eval(getattr(self, i + "_entry").get())
             except:
                 messagebox.showerror("Input Error", "x0, y0, X or N have incorrect format!")
                 break
