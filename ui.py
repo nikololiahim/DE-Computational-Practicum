@@ -1,26 +1,31 @@
 from tkinter import *
 from tkinter import messagebox
 
+from math import sqrt, pi, sin, cos, tan, exp
+
 
 
 class MainWindow:
 
-    VERSION = "0.0"
+    VERSION = "1.0"
     EULER = 1
     IMPROVED_EULER = 2
     RUNGE_KUTTA = 3
+    font = ("Consolas", 13)
 
 
-    @staticmethod
-    def entry(root: Widget) -> Entry:
-        entry = Entry(root, background="bisque", width=10)
+    @classmethod
+    def entry(cls, root: Widget) -> Entry:
+
+        entry = Entry(root, background="bisque", width=10, font=cls.font)
         entry.pack(expand=True, fill=BOTH, side=RIGHT)
         return entry
 
 
-    @staticmethod
-    def label(root: Widget, text: str)-> Label:
-        label = Label(root, text=text, justify=RIGHT)
+    @classmethod
+    def label(cls, root: Widget, text: str)-> Label:
+        font = ("Consolas", 13)
+        label = Label(root, text=text, justify=RIGHT, font=cls.font)
         label.pack(expand=True, fill=BOTH)
         return label
 
@@ -82,11 +87,11 @@ class MainWindow:
             self.frames[i][8].grid(row=i, column=8, sticky=N + S + E + W, columnspan=3)
             self.__setattr__(names[i-2]+"_entry", self.entry(self.frames[i][8]))
 
-        # instantiating values
-        self.x0_entry.insert("0", "1")
-        self.y0_entry.insert("0", "1")
-        self.X_entry.insert("0", "9")
-        self.N_entry.insert("0", "9000")
+        # initializing values
+        self.x0_entry.insert("0", "0")
+        self.y0_entry.insert("0", "sqrt(1/2)")
+        self.X_entry.insert("0", "3")
+        self.N_entry.insert("0", "3*10**5")
 
         # laying out radio box
         self.method_selected = IntVar()
@@ -100,14 +105,15 @@ class MainWindow:
                                 text=method_names[i-7],
                                 variable=self.method_selected,
                                 value=method_values[i-7],
-                                background='white')
+                                background='white',
+                                font=self.font)
                     )
             getattr(self, "method"+str(i-6)).pack(expand=True, anchor=W)
 
         self.method_selected.set(self.RUNGE_KUTTA)
 
         # laying out button
-        self.apply = Button(self.frames[10][9], text="Apply", command=self.gather_data)
+        self.apply = Button(self.frames[10][9], text="Apply", command=self.gather_data, font=self.font)
         self.apply.pack(expand=True, fill=BOTH)
 
         # binding 'Enter' key to 'Apply' button action
@@ -119,14 +125,16 @@ class MainWindow:
         data = dict()
         for i in names:
             try:
-                data[i + "_entry"] =  float(getattr(self, i + "_entry").get())
-            except ValueError:
-                messagebox.showerror("Input Error", "x0, y0, X and N should be decimal numbers!")
+                data[i + "_entry"] =  eval(getattr(self, i + "_entry").get())
+            except:
+                messagebox.showerror("Input Error", "x0, y0, X or N have incorrect format!")
                 break
-        data['method'] = self.method_selected.get()
-        for i in data.keys():
-            print(i, data[i])
-        return data
+        else:
+            data['method'] = self.method_selected.get()
+            for i in data.keys():
+                print(i, data[i])
+            return data
+        return dict()
 
 
 
