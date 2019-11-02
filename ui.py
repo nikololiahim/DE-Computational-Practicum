@@ -182,6 +182,7 @@ class MainWindow:
         data = self.gather_data()
         if self.valid(data):
             solver = Solver(data)
+            print(solver)
             solution = solver.solve_exact()
             self.draw_plot(self.solution_canvas, self.solution_axes, solution)
         else:

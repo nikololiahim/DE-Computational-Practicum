@@ -4,10 +4,10 @@ from math import *
 class Solver:
 
     @staticmethod
-    def _c(x: float, y: float):
-        return ( (1/(y*y)) - 1) * exp(x*x)
+    def _c(x: float, y: float) -> float:
+        return (1/(y*y) - 1) * exp(x*x)
 
-    def y_exact(self, x: float):
+    def y_exact(self, x: float) -> float:
         return 1 / sqrt((exp(-x * x) * self.C + 1))
 
     def __init__(self, data):
@@ -32,7 +32,6 @@ class Solver:
             x += s
         return res
 
-
     def solve_numeric(self) -> dict:
         pass
 
@@ -45,5 +44,11 @@ class Solver:
     def _solve_runge_kutta(self) -> dict:
         pass
 
+    def __str__(self):
+        return f"{{x0: {self.x0},  " + \
+               f"y0: {self.y0}, " + \
+               f"N: {self.N}, " + \
+               f"step: {self.step}, " + \
+               f"C: {self.C}}}"
 
 
