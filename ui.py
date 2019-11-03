@@ -64,6 +64,9 @@ class MainWindow:
         # TODO: insert plotting widget for solutions
         self.solution = Figure(figsize=(2, 2), dpi=100)
         self.solution_axes = self.solution.add_subplot(111)
+        self.solution_axes.minorticks_on()
+        self.solution_axes.grid(which="major")
+        self.solution_axes.grid(which="minor", linestyle=":")
         self.exact_solution_plot, = self.solution_axes.plot(self._DEFAULT_DATA.x_axis, self._DEFAULT_DATA.y_axis)
         self.numerical_solution_plot, = self.solution_axes.plot(self._DEFAULT_DATA.x_axis, self._DEFAULT_DATA.x_axis)
 
@@ -88,13 +91,17 @@ class MainWindow:
         # Errors plot
         # TODO: insert plotting widget for errors
         self.error = Figure(figsize=(2, 2), dpi=100)
-        self.error.add_subplot(111).plot(range(1, 9), [5, 6, 1, 3, 8, 9, 3, 5])
+        self.error_axes = self.error.add_subplot(111)
+        self.error_axes.minorticks_on()
+        self.error_axes.grid(which="major")
+        self.error_axes.grid(which="minor", linestyle=":")
+        self.error_plot, = self.error_axes.plot(self._DEFAULT_DATA.x_axis, self._DEFAULT_DATA.y_axis)
 
-        error_canvas = FigureCanvasTkAgg(self.error, self.frames[7][1])
-        error_canvas.draw()
-        error_plot = error_canvas.get_tk_widget()
-        error_plot.pack(fill=BOTH, expand=True)
-        error_plot.bind("<Button-1>", lambda event: self.create_plot_in_a_new_window(self.error))
+        self.error_canvas = FigureCanvasTkAgg(self.error, self.frames[7][1])
+        self.error_canvas.draw()
+        self.error_widget = self.error_canvas.get_tk_widget()
+        self.error_widget.pack(fill=BOTH, expand=True)
+        self.error_widget.bind("<Button-1>", lambda event: self.create_plot_in_a_new_window([self._DEFAULT_DATA]))
 
     def _place_input_area(self):
         names = ["x0", "y0", "X", "N"]
@@ -154,11 +161,11 @@ class MainWindow:
         # binding 'Enter' key to 'Apply' button action
         self.root.bind("<Return>", lambda event: self.apply.invoke())
 
-    def draw_plot(self, axes, line, data: Data):
+    def draw_plot(self, axes, line, canvas, data: Data):
         line.set_data(data.x_axis, data.y_axis)
         axes.relim()
         axes.autoscale()
-        self.solution_canvas.draw()
+        canvas.draw()
 
     def gather_data(self):
         names = ["x0", "y0", "X", "N"]
@@ -193,21 +200,29 @@ class MainWindow:
             solver = Solver(input_data)
             print(solver)
             exact_solution = solver.solve_exact()
-            numerical_solution = solver.solve_numerical()
-            solutions = (exact_solution, numerical_solution)
-            self.draw_plot(self.solution_axes, self.exact_solution_plot, solutions[0])
-            self.draw_plot(self.solution_axes, self.numerical_solution_plot, solutions[1])
+            numerical_solution_and_error = solver.solve_numerical()
+            numerical_solution = numerical_solution_and_error[0]
+            approximation_error = numerical_solution_and_error[1]
+            solutions = [exact_solution, numerical_solution]
+            self.draw_plot(self.solution_axes, self.exact_solution_plot, self.solution_canvas, solutions[0])
+            self.draw_plot(self.solution_axes, self.numerical_solution_plot, self.solution_canvas, solutions[1])
+            self.draw_plot(self.error_axes, self.error_plot, self.error_canvas, approximation_error)
             self.solution_widget.bind("<Button-1>", lambda event: self.create_plot_in_a_new_window(solutions))
+            self.error_widget.bind("<Button-1>", lambda event: self.create_plot_in_a_new_window([approximation_error]))
         else:
             messagebox.showerror("Error", "Given data is invalid!")
 
-    def create_plot_in_a_new_window(self, data: tuple):
+    def create_plot_in_a_new_window(self, datasets: list):
         new_window = Toplevel(self.root)
         new_window.title("Plot")
         new_window.state("zoomed")
         fig = Figure(figsize=(5, 5), dpi=100)
-        fig.add_subplot(111).plot(data[0].x_axis, data[0].y_axis)
-        fig.add_subplot(111).plot(data[1].x_axis, data[1].y_axis)
+        axes = fig.add_subplot(111)
+        axes.grid(which="major")
+        axes.minorticks_on()
+        axes.grid(which="minor", linestyle=":")
+        for i in range(len(datasets)):
+            axes.plot(datasets[i].x_axis, datasets[i].y_axis)
         canvas = FigureCanvasTkAgg(fig, new_window)
         canvas.draw()
         canvas.get_tk_widget().pack(fill=BOTH, expand=True)
