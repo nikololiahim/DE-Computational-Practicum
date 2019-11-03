@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import messagebox
 import matplotlib
+from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
@@ -13,6 +14,7 @@ class MainWindow:
     _IMPROVED_EULER = 2
     _RUNGE_KUTTA = 3
     _FONT = ("Consolas", 20)
+    _DEFAULT_DATA = Data(0).from_tuple((range(1, 9), [5, 6, 1, 3, 8, 9, 3, 5]))
 
     @classmethod
     def _entry(cls, root: Widget) -> Entry:
@@ -42,19 +44,19 @@ class MainWindow:
         colors = ["white", "gray"]
         for i in range(12):
             for j in range(12):
-                self.frames[i][j] = Frame(root, background='linen', height=30, width=30)
+                self.frames[i][j] = Frame(self.root, background='linen', height=30, width=30)
                 self.frames[i][j].grid(row=i, column=j, sticky=N + S + E + W)
-                root.grid_columnconfigure(j, weight=1)
-                root.grid_rowconfigure(i, weight=1)
+                self.root.grid_columnconfigure(j, weight=1)
+                self.root.grid_rowconfigure(i, weight=1)
 
     def _place_solution_area(self):
         # 'Solutions' label
-        self.frames[1][1] = Frame(root, background="bisque2", bd=5)
+        self.frames[1][1] = Frame(self.root, background="bisque2", bd=5)
         self.frames[1][1].grid(row=1, column=1, sticky=N + S + E + W, columnspan=5)
         solution_label = self._label(self.frames[1][1], text="Solutions")
 
         # Solutions plot frame
-        self.frames[2][1] = Frame(root, background="lightblue", bd=5)
+        self.frames[2][1] = Frame(self.root, background="lightblue", bd=5)
         self.frames[2][1].grid(row=2, column=1, sticky=N + S + E + W, columnspan=5, rowspan=4)
 
     def _place_solution_plot(self):
@@ -62,22 +64,24 @@ class MainWindow:
         # TODO: insert plotting widget for solutions
         self.solution = Figure(figsize=(2, 2), dpi=100)
         self.solution_axes = self.solution.add_subplot(111)
-        self.solution_axes.plot(range(1, 9), [5, 6, 1, 3, 8, 9, 3, 5])
+        self.exact_solution_plot, = self.solution_axes.plot(self._DEFAULT_DATA.x_axis, self._DEFAULT_DATA.y_axis)
+        self.numerical_solution_plot, = self.solution_axes.plot(self._DEFAULT_DATA.x_axis, self._DEFAULT_DATA.x_axis)
 
+        data = (self._DEFAULT_DATA, Data(0).from_tuple((range(1, 9), range(1, 9))))
         self.solution_canvas = FigureCanvasTkAgg(self.solution, self.frames[2][1])
         self.solution_canvas.draw()
-        solution_plot = self.solution_canvas.get_tk_widget()
-        solution_plot.pack(fill=BOTH, expand=True)
-        solution_plot.bind("<Button-1>", lambda event: self.create_plot_in_a_new_window(self.solution))
+        self.solution_widget = self.solution_canvas.get_tk_widget()
+        self.solution_widget.pack(fill=BOTH, expand=True)
+        self.solution_widget.bind("<Button-1>", lambda event: self.create_plot_in_a_new_window(data))
 
     def _place_error_area(self):
         # 'Errors' label frame
-        self.frames[6][1] = Frame(root, background="bisque2", bd=5)
+        self.frames[6][1] = Frame(self.root, background="bisque2", bd=5)
         self.frames[6][1].grid(row=6, column=1, sticky=N + S + E + W, columnspan=5)
         errors_label = self._label(self.frames[6][1], text="Errors")
 
         # Errors plot frame
-        self.frames[7][1] = Frame(root, background="lightblue", bd=5)
+        self.frames[7][1] = Frame(self.root, background="lightblue", bd=5)
         self.frames[7][1].grid(row=7, column=1, sticky=N + S + E + W, columnspan=5, rowspan=4)
 
     def _place_error_plot(self):
@@ -96,7 +100,7 @@ class MainWindow:
         names = ["x0", "y0", "X", "N"]
         for i in range(2, 6):
             self._label(self.frames[i][7], names[i - 2])
-            self.frames[i][8] = Frame(root, background="bisque", bd=5)
+            self.frames[i][8] = Frame(self.root, background="bisque", bd=5)
             self.frames[i][8].grid(row=i, column=8, sticky=N + S + E + W, columnspan=3)
             self.__setattr__(names[i - 2] + "_entry", self._entry(self.frames[i][8]))
 
@@ -105,7 +109,7 @@ class MainWindow:
         self.x0_entry.insert("0", "0")
         self.y0_entry.insert("0", "sqrt(1/2)")
         self.X_entry.insert("0", "3")
-        self.N_entry.insert("0", "3*10**5")
+        self.N_entry.insert("0", "1e5")
 
     def _place_radiobox(self):
         # laying out radio box
@@ -113,7 +117,7 @@ class MainWindow:
         method_names = ["Euler", "Improved Euler", "Runge-Kutta"]
         method_values = [self._EULER, self._IMPROVED_EULER, self._RUNGE_KUTTA]
         for i in range(7, 10):
-            self.frames[i][8] = Frame(root, background="white", bd=5)
+            self.frames[i][8] = Frame(self.root, background="white", bd=5)
             self.frames[i][8].grid(row=i, column=7,
                                    sticky=N + S + E + W,
                                    columnspan=3)
@@ -150,10 +154,11 @@ class MainWindow:
         # binding 'Enter' key to 'Apply' button action
         self.root.bind("<Return>", lambda event: self.apply.invoke())
 
-    def draw_plot(self, canvas, axes, data):
-        axes.clear()
-        axes.plot(data.keys(), data.values())
-        canvas.draw()
+    def draw_plot(self, axes, line, data: Data):
+        line.set_data(data.x_axis, data.y_axis)
+        axes.relim()
+        axes.autoscale()
+        self.solution_canvas.draw()
 
     def gather_data(self):
         names = ["x0", "y0", "X", "N"]
@@ -176,28 +181,37 @@ class MainWindow:
             return False
         if data["x0"] >= data["X"]:
             return False
+        if not data["N"].is_integer():
+            return False
+        if int(data["N"]) == 0:
+            return False
         return True
 
     def solve(self):
-        data = self.gather_data()
-        if self.valid(data):
-            solver = Solver(data)
+        input_data = self.gather_data()
+        if self.valid(input_data):
+            solver = Solver(input_data)
             print(solver)
-            solution = solver.solve_exact()
-            self.draw_plot(self.solution_canvas, self.solution_axes, solution)
+            exact_solution = solver.solve_exact()
+            numerical_solution = solver.solve_numerical()
+            solutions = (exact_solution, numerical_solution)
+            self.draw_plot(self.solution_axes, self.exact_solution_plot, solutions[0])
+            self.draw_plot(self.solution_axes, self.numerical_solution_plot, solutions[1])
+            self.solution_widget.bind("<Button-1>", lambda event: self.create_plot_in_a_new_window(solutions))
         else:
             messagebox.showerror("Error", "Given data is invalid!")
 
-    def create_plot_in_a_new_window(self, fig: Figure):
+    def create_plot_in_a_new_window(self, data: tuple):
         new_window = Toplevel(self.root)
         new_window.title("Plot")
         new_window.state("zoomed")
+        fig = Figure(figsize=(5, 5), dpi=100)
+        fig.add_subplot(111).plot(data[0].x_axis, data[0].y_axis)
+        fig.add_subplot(111).plot(data[1].x_axis, data[1].y_axis)
         canvas = FigureCanvasTkAgg(fig, new_window)
         canvas.draw()
-        plot = canvas.get_tk_widget()
-        plot.pack(fill=BOTH, expand=True)
+        canvas.get_tk_widget().pack(fill=BOTH, expand=True)
         toolbar = NavigationToolbar2Tk(canvas, new_window)
-        toolbar.update()
         toolbar.pack()
 
 
@@ -207,3 +221,41 @@ if __name__ == "__main__":
     window = MainWindow(root)
     print(list(filter(lambda x: not x.startswith("_"), dir(window))))
     window.root.mainloop()
+    # import tkinter as tk
+    # from matplotlib.figure import Figure
+    # from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+    # import numpy as np
+    #
+    # app = tk.Tk()
+    # app.wm_title("Graphs")
+    #
+    # fig = Figure(figsize=(6, 4), dpi=96)
+    # a = np.array([1, 2, 3])
+    # ax = fig.add_subplot(111)
+    #
+    # line, = ax.plot(a, np.array([0, 0.5, 2]))
+    # line2, = ax.plot(a, 0.55 * a)
+    #
+    # graph = FigureCanvasTkAgg(fig, master=app)
+    # canvas = graph.get_tk_widget()
+    # canvas.grid(row=0, column=0, rowspan=11, padx=10, pady=5)
+    #
+    #
+    # def updateScale(value):
+    #     print("scale is now %s" % (value))
+    #     b = float(value) * a
+    #     # set new data to the line
+    #     line2.set_data(a, b)
+    #     # rescale the axes
+    #     ax.relim()
+    #     ax.autoscale()
+    #     # draw canvas
+    #     fig.canvas.draw_idle()
+    #
+    #
+    # value = tk.DoubleVar()
+    # scale = tk.Scale(app, variable=value, orient="horizontal", length=100,
+    #                  from_=0.55, to=2.75, resolution=0.01, command=updateScale)
+    # scale.grid(row=0, column=1)
+    #
+    # app.mainloop()
