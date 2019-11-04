@@ -1,20 +1,17 @@
 from tkinter import *
 from tkinter import messagebox
-import matplotlib
-from matplotlib import pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from matplotlib.backend_bases import key_press_handler
-from matplotlib.figure import Figure
+
 from solver import *
+from plotter import *
 
 
 class MainWindow:
-    _VERSION = "1.0"
+    _VERSION = "3.0"
     _EULER = 1
     _IMPROVED_EULER = 2
     _RUNGE_KUTTA = 3
     _FONT = ("Consolas", 20)
-    _DEFAULT_DATA = Data(0).from_tuple((range(1, 9), [5, 6, 1, 3, 8, 9, 3, 5]))
+    _DEFAULT_DATA = Dataset(0).from_tuple((range(1, 9), [5, 6, 1, 3, 8, 9, 3, 5]))
 
     @classmethod
     def _entry(cls, root: Widget) -> Entry:
@@ -62,20 +59,16 @@ class MainWindow:
     def _place_solution_plot(self):
         # Solutions plot
         # TODO: insert plotting widget for solutions
-        self.solution = Figure(figsize=(2, 2), dpi=100)
-        self.solution_axes = self.solution.add_subplot(111)
-        self.solution_axes.minorticks_on()
-        self.solution_axes.grid(which="major")
-        self.solution_axes.grid(which="minor", linestyle=":")
-        self.exact_solution_plot, = self.solution_axes.plot(self._DEFAULT_DATA.x_axis, self._DEFAULT_DATA.y_axis)
-        self.numerical_solution_plot, = self.solution_axes.plot(self._DEFAULT_DATA.x_axis, self._DEFAULT_DATA.x_axis)
-
-        data = (self._DEFAULT_DATA, Data(0).from_tuple((range(1, 9), range(1, 9))))
-        self.solution_canvas = FigureCanvasTkAgg(self.solution, self.frames[2][1])
-        self.solution_canvas.draw()
-        self.solution_widget = self.solution_canvas.get_tk_widget()
-        self.solution_widget.pack(fill=BOTH, expand=True)
-        self.solution_widget.bind("<Button-1>", lambda event: self.create_plot_in_a_new_window(data))
+        self.solution_plotter = Plotter(self.frames[2][1])
+        self.solution_plotter.plot(Plotter.DEFAULT_DATA1)
+        self.solution_plotter.plot(Plotter.DEFAULT_DATA2)
+        self.solution_plotter.create_legend()
+        self.solution_plotter.\
+            widget.bind(
+                "<Button-1>",
+                lambda event: self.create_plot_in_a_new_window([Plotter.DEFAULT_DATA1,
+                                                                Plotter.DEFAULT_DATA2])
+            )
 
     def _place_error_area(self):
         # 'Errors' label frame
@@ -90,18 +83,14 @@ class MainWindow:
     def _place_error_plot(self):
         # Errors plot
         # TODO: insert plotting widget for errors
-        self.error = Figure(figsize=(2, 2), dpi=100)
-        self.error_axes = self.error.add_subplot(111)
-        self.error_axes.minorticks_on()
-        self.error_axes.grid(which="major")
-        self.error_axes.grid(which="minor", linestyle=":")
-        self.error_plot, = self.error_axes.plot(self._DEFAULT_DATA.x_axis, self._DEFAULT_DATA.y_axis)
-
-        self.error_canvas = FigureCanvasTkAgg(self.error, self.frames[7][1])
-        self.error_canvas.draw()
-        self.error_widget = self.error_canvas.get_tk_widget()
-        self.error_widget.pack(fill=BOTH, expand=True)
-        self.error_widget.bind("<Button-1>", lambda event: self.create_plot_in_a_new_window([self._DEFAULT_DATA]))
+        self.error_plotter = Plotter(self.frames[7][1])
+        self.error_plotter.plot(Plotter.DEFAULT_DATA1)
+        self.error_plotter.create_legend()
+        self.error_plotter. \
+            widget.bind(
+                "<Button-1>",
+                lambda event: self.create_plot_in_a_new_window([Plotter.DEFAULT_DATA1])
+            )
 
     def _place_input_area(self):
         names = ["x0", "y0", "X", "N"]
@@ -161,12 +150,6 @@ class MainWindow:
         # binding 'Enter' key to 'Apply' button action
         self.root.bind("<Return>", lambda event: self.apply.invoke())
 
-    def draw_plot(self, axes, line, canvas, data: Data):
-        line.set_data(data.x_axis, data.y_axis)
-        axes.relim()
-        axes.autoscale()
-        canvas.draw()
-
     def gather_data(self):
         names = ["x0", "y0", "X", "N"]
         data = dict()
@@ -202,13 +185,14 @@ class MainWindow:
             exact_solution = solver.solve_exact()
             numerical_solution_and_error = solver.solve_numerical()
             numerical_solution = numerical_solution_and_error[0]
-            approximation_error = numerical_solution_and_error[1]
+            error = [numerical_solution_and_error[1]]
             solutions = [exact_solution, numerical_solution]
-            self.draw_plot(self.solution_axes, self.exact_solution_plot, self.solution_canvas, solutions[0])
-            self.draw_plot(self.solution_axes, self.numerical_solution_plot, self.solution_canvas, solutions[1])
-            self.draw_plot(self.error_axes, self.error_plot, self.error_canvas, approximation_error)
-            self.solution_widget.bind("<Button-1>", lambda event: self.create_plot_in_a_new_window(solutions))
-            self.error_widget.bind("<Button-1>", lambda event: self.create_plot_in_a_new_window([approximation_error]))
+            self.solution_plotter.redraw(solutions)
+            self.error_plotter.redraw(error)
+            self.solution_plotter.widget.bind("<Button-1>",
+                                      lambda event: self.create_plot_in_a_new_window(solutions))
+            self.error_plotter.widget.bind("<Button-1>",
+                                   lambda event: self.create_plot_in_a_new_window(error))
         else:
             messagebox.showerror("Error", "Given data is invalid!")
 
@@ -216,17 +200,12 @@ class MainWindow:
         new_window = Toplevel(self.root)
         new_window.title("Plot")
         new_window.state("zoomed")
-        fig = Figure(figsize=(5, 5), dpi=100)
-        axes = fig.add_subplot(111)
-        axes.grid(which="major")
-        axes.minorticks_on()
-        axes.grid(which="minor", linestyle=":")
+        plotter = Plotter(new_window)
         for i in range(len(datasets)):
-            axes.plot(datasets[i].x_axis, datasets[i].y_axis)
-        canvas = FigureCanvasTkAgg(fig, new_window)
-        canvas.draw()
-        canvas.get_tk_widget().pack(fill=BOTH, expand=True)
-        toolbar = NavigationToolbar2Tk(canvas, new_window)
+            plotter.plot(Plotter.EMPTY_DATA)
+        plotter.create_legend()
+        plotter.redraw(datasets)
+        toolbar = NavigationToolbar2Tk(plotter.canvas, new_window)
         toolbar.pack()
 
 

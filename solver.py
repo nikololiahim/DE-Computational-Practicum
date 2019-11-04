@@ -1,8 +1,8 @@
 from math import *
 import numpy as np
+from abc import abstractmethod
 
-
-class Data:
+class Dataset:
     def __init__(self, size: int, zeros=False):
         if not zeros:
             self.size = size
@@ -13,6 +13,7 @@ class Data:
             self.x_axis = np.zeros(size)
             self.y_axis = np.zeros(size)
         self.error = np.zeros(size)
+        self.name = "Data"
 
     def from_tuple(self, iterable: tuple):
         self.__init__(len(iterable[0]))
@@ -34,19 +35,23 @@ class Data:
         else:
             raise IndexError("Index is out of bounds!")
 
+    def add_name(self, name):
+        self.name = name
+        return self
+
 
 class Solver:
 
     @staticmethod
     def _c(x: float, y: float) -> float:
-        return ((1 - pow(y, 2)) / pow(y, 2)) * exp(pow(x, 2))
+        return (1/pow(y, 2) - 1) * exp(pow(x, 2))
 
     def y_exact(self, x: float) -> float:
         return 1 / sqrt(exp(-pow(x, 2)) * self.C + 1)
 
     @staticmethod
     def y_prime(x: float, y: float) -> float:
-        return x*y - x*pow(y, 3)
+        return x * (y - pow(y, 3))
 
     def __init__(self, data):
         self.x0 = data["x0"]
@@ -57,10 +62,11 @@ class Solver:
         self.C = self._c(self.x0, self.y0)
         self.step = abs(self.X-self.x0)/self.N
 
-    def solve_exact(self) -> Data:
+    def solve_exact(self) -> Dataset:
         x = self.x0
         s = self.step
-        res = Data(self.N)
+        res = Dataset(self.N)
+        res.add_name("Exact Solution")
         for i in range(self.N):
             try:
                 res.insert(i, (x, self.y_exact(x)))
@@ -72,20 +78,32 @@ class Solver:
 
     def solve_numerical(self) -> tuple:
         if self.method == 1:
-            return self._solve_euler()
+            sol = self._solve_euler()
+            method_name = "Euler"
+            sol[0].add_name(f"Numerical solution ({method_name})")
+            sol[1].add_name(f"Local Error ({method_name})")
+            return sol
         elif self.method == 2:
-            return self._solve_improved_euler()
+            sol = self._solve_improved_euler()
+            method_name = "Improved Euler"
+            sol[0].add_name(f"Numerical solution ({method_name})")
+            sol[1].add_name(f"Local Error ({method_name})")
+            return sol
         elif self.method == 3:
-            return self._solve_runge_kutta()
+            sol = self._solve_runge_kutta()
+            method_name = "Runge-Kutta"
+            sol[0].add_name(f"Numerical solution ({method_name})")
+            sol[1].add_name(f"Local Error ({method_name})")
+            return sol
         else:
-            return Data(self.N, zeros=True), Data(self.N, zeros=True)
+            return Dataset(self.N, zeros=True), Dataset(self.N, zeros=True)
 
     def _next_euler(self, x: float, y: float, h: float) -> float:
         return y + h*self.y_prime(x, y)
 
     def _solve_euler(self) -> tuple:
-        res = Data(self.N)
-        errors = Data(self.N)
+        res = Dataset(self.N)
+        errors = Dataset(self.N)
         x = self.x0
         y = self.y0
         N = self.N
@@ -108,8 +126,8 @@ class Solver:
         return y + (h / 2) * (k1 + k2)
 
     def _solve_improved_euler(self) -> tuple:
-        res = Data(self.N)
-        errors = Data(self.N)
+        res = Dataset(self.N)
+        errors = Dataset(self.N)
         x = self.x0
         y = self.y0
         N = self.N
@@ -133,8 +151,8 @@ class Solver:
         return y + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
 
     def _solve_runge_kutta(self) -> tuple:
-        res = Data(self.N)
-        errors = Data(self.N)
+        res = Dataset(self.N)
+        errors = Dataset(self.N)
         x = self.x0
         y = self.y0
         N = self.N
@@ -156,5 +174,4 @@ class Solver:
                f"N: {self.N}, " + \
                f"step: {self.step}, " + \
                f"C: {self.C}}}"
-
 
