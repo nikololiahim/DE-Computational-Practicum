@@ -1,7 +1,7 @@
 import matplotlib
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
-from solver import Dataset
+from dataset import Dataset
 
 
 class Plotter:

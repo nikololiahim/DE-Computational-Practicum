@@ -1,6 +1,5 @@
 from tkinter import *
 from tkinter import messagebox
-
 from solver import *
 from plotter import *
 
@@ -11,17 +10,14 @@ class MainWindow:
     _IMPROVED_EULER = 2
     _RUNGE_KUTTA = 3
     _FONT = ("Consolas", 20)
-    _DEFAULT_DATA = Dataset(0).from_tuple((range(1, 9), [5, 6, 1, 3, 8, 9, 3, 5]))
 
-    @classmethod
-    def _entry(cls, root: Widget) -> Entry:
-        entry = Entry(root, background="bisque", width=10, font=cls._FONT)
+    def _entry(self, root: Widget) -> Entry:
+        entry = Entry(root, background="bisque", width=10, font=self._FONT)
         entry.pack(expand=True, fill=BOTH, side=RIGHT)
         return entry
 
-    @classmethod
-    def _label(cls, root: Widget, text: str) -> Label:
-        label = Label(root, text=text, justify=RIGHT, font=cls._FONT)
+    def _label(self, root: Widget, text: str) -> Label:
+        label = Label(root, text=text, justify=RIGHT, font=self._FONT)
         label.pack(expand=True, fill=BOTH)
         return label
 
@@ -32,12 +28,6 @@ class MainWindow:
 
     def _place_frames(self):
         self.frames = [[Frame()] * 12 for i in range(12)]
-        # colors = ['snow', 'dim gray', 'blue', 'cyan',
-        #           'pale green', 'forest green', 'yellow', 'bisque2',
-        #           'SlateBlue1', 'SeaGreen1', 'gold2', 'brown4',
-        #           'maroon1', 'magenta2', 'thistle4', 'khaki4']
-
-        # building grid
         colors = ["white", "gray"]
         for i in range(12):
             for j in range(12):
@@ -57,8 +47,6 @@ class MainWindow:
         self.frames[2][1].grid(row=2, column=1, sticky=N + S + E + W, columnspan=5, rowspan=4)
 
     def _place_solution_plot(self):
-        # Solutions plot
-        # TODO: insert plotting widget for solutions
         self.solution_plotter = Plotter(self.frames[2][1])
         self.solution_plotter.plot(Plotter.DEFAULT_DATA1)
         self.solution_plotter.plot(Plotter.DEFAULT_DATA2)
@@ -81,8 +69,6 @@ class MainWindow:
         self.frames[7][1].grid(row=7, column=1, sticky=N + S + E + W, columnspan=5, rowspan=4)
 
     def _place_error_plot(self):
-        # Errors plot
-        # TODO: insert plotting widget for errors
         self.error_plotter = Plotter(self.frames[7][1])
         self.error_plotter.plot(Plotter.DEFAULT_DATA1)
         self.error_plotter.create_legend()
@@ -100,15 +86,14 @@ class MainWindow:
             self.frames[i][8].grid(row=i, column=8, sticky=N + S + E + W, columnspan=3)
             self.__setattr__(names[i - 2] + "_entry", self._entry(self.frames[i][8]))
 
+    # setting input fields to default values
     def _init_input_area(self):
-        # initializing values
         self.x0_entry.insert("0", "0")
         self.y0_entry.insert("0", "sqrt(1/2)")
         self.X_entry.insert("0", "3")
-        self.N_entry.insert("0", "1e5")
+        self.N_entry.insert("0", "20")
 
     def _place_radiobox(self):
-        # laying out radio box
         self.method_selected = IntVar()
         method_names = ["Euler", "Improved Euler", "Runge-Kutta"]
         method_values = [self._EULER, self._IMPROVED_EULER, self._RUNGE_KUTTA]
@@ -128,7 +113,6 @@ class MainWindow:
         self.method_selected.set(self._RUNGE_KUTTA)
 
     def _place_button(self):
-        # laying out button
         self.apply = Button(self.frames[10][9], text="Apply", command=self.solve, font=self._FONT)
         self.apply.pack(expand=True, fill=BOTH)
 
@@ -147,8 +131,20 @@ class MainWindow:
         self._place_radiobox()
         self._place_button()
 
+        # binding up and down arrow keys for scrolling through methods
+        self.root.bind("<Up>", lambda event: self.move_up())
+        self.root.bind("<Down>", lambda event: self.move_down())
+
         # binding 'Enter' key to 'Apply' button action
         self.root.bind("<Return>", lambda event: self.apply.invoke())
+
+    def move_down(self):
+        value = self.method_selected.get()
+        self.method_selected.set(value + 1 if value < 3 else 1)
+
+    def move_up(self):
+        value = self.method_selected.get()
+        self.method_selected.set(value - 1 if value > 1 else 3)
 
     def gather_data(self):
         names = ["x0", "y0", "X", "N"]
@@ -173,7 +169,7 @@ class MainWindow:
             return False
         if not data["N"].is_integer():
             return False
-        if int(data["N"]) == 0:
+        if int(data["N"]) <= 0:
             return False
         return True
 
