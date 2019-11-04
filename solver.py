@@ -117,7 +117,7 @@ class Solver:
         res.insert(0, (x, y))
         errors.insert(0, (x, 0))
         for i in range(1, N):
-            y = y + self._next_improved_euler(x, y, h)
+            y = self._next_improved_euler(x, y, h)
             y_exact = self.y_exact(x)
             error = y_exact - self._next_improved_euler(x, y_exact, h)
             x += h
@@ -142,7 +142,7 @@ class Solver:
         errors.insert(0, (x, 0))
         res.insert(0, (x, y))
         for i in range(1, N):
-            y = y + self._next_runge_kutta(x, y, h)
+            y = self._next_runge_kutta(x, y, h)
             y_exact = self.y_exact(x)
             error = y_exact - self._next_runge_kutta(x, y_exact, h)
             x += h
