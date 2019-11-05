@@ -3,9 +3,11 @@ from tkinter import messagebox
 from solver import *
 from plotter import *
 
+matplotlib.use("TkAgg")
+
 
 class MainWindow:
-    _VERSION = "3.0"
+    _VERSION = "4.0"
     _EULER = 1
     _IMPROVED_EULER = 2
     _RUNGE_KUTTA = 3
@@ -110,7 +112,7 @@ class MainWindow:
                         font=self._FONT).pack(expand=True,
                                               anchor=W)
 
-        self.method_selected.set(self._RUNGE_KUTTA)
+        self.method_selected.set(self._EULER)
 
     def _place_button(self):
         self.apply = Button(self.frames[10][9], text="Apply", command=self.solve, font=self._FONT)
@@ -162,21 +164,14 @@ class MainWindow:
             return data
         return dict()
 
-    def valid(self, data):
-        if data["y0"] <= 0.0:
-            return False
-        if data["x0"] >= data["X"]:
-            return False
-        if not data["N"].is_integer():
-            return False
-        if int(data["N"]) <= 0:
-            return False
-        return True
 
     def solve(self):
         input_data = self.gather_data()
-        if self.valid(input_data):
+        try:
             solver = Solver(input_data)
+        except InvalidDataException as e:
+            messagebox.showerror("Error", e.strerror)
+        else:
             print(solver)
             exact_solution = solver.solve_exact()
             numerical_solution_and_error = solver.solve_numerical()
@@ -189,8 +184,6 @@ class MainWindow:
                                       lambda event: self.create_plot_in_a_new_window(solutions))
             self.error_plotter.widget.bind("<Button-1>",
                                    lambda event: self.create_plot_in_a_new_window(error))
-        else:
-            messagebox.showerror("Error", "Given data is invalid!")
 
     def create_plot_in_a_new_window(self, datasets: list):
         new_window = Toplevel(self.root)
@@ -203,11 +196,3 @@ class MainWindow:
         plotter.redraw(datasets)
         toolbar = NavigationToolbar2Tk(plotter.canvas, new_window)
         toolbar.pack()
-
-
-if __name__ == "__main__":
-    matplotlib.use("TkAgg")
-    root = Tk()
-    window = MainWindow(root)
-    print(list(filter(lambda x: not x.startswith("_"), dir(window))))
-    window.root.mainloop()

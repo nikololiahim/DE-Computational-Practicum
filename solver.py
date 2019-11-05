@@ -2,7 +2,25 @@ from dataset import Dataset
 from numpy import e, pi, power, exp, log, sin, cos, sqrt, NaN
 
 
+class InvalidDataException(Exception):
+    def __init__(self, arg):
+        self.strerror = arg
+        self.args = (arg,)
+
+
 class Solver:
+
+    @staticmethod
+    def valid(data):
+        if data["y0"] <= 0.0:
+            return False
+        if data["x0"] >= data["X"]:
+            return False
+        if not data["N"].is_integer():
+            return False
+        if int(data["N"]) <= 1:
+            return False
+        return True
 
     @staticmethod
     def _c(x: float, y: float) -> float:
@@ -16,6 +34,8 @@ class Solver:
         return x * (y - power(y, 3))
 
     def __init__(self, data):
+        if not self.valid(data):
+            raise InvalidDataException("Data you've given is invalid!")
         self.x0 = data["x0"]
         self.y0 = data["y0"]
         self.X = data["X"]
