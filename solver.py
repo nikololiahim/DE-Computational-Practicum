@@ -1,19 +1,19 @@
-from math import *
-from dataset import Dataset, np
+from dataset import Dataset
+from numpy import e, pi, power, exp, log, sin, cos, sqrt, NaN
 
 
 class Solver:
 
     @staticmethod
     def _c(x: float, y: float) -> float:
-        return (1/pow(y, 2) - 1) * exp(pow(x, 2))
+        return (1/power(y, 2) - 1) * exp(power(x, 2))
 
     def y_exact(self, x: float) -> float:
-        return 1 / sqrt(exp(-pow(x, 2)) * self.C + 1)
+        return 1 / sqrt(exp(-x*x) * self.C + 1)
 
     @staticmethod
     def y_prime(x: float, y: float) -> float:
-        return x * (y - pow(y, 3))
+        return x * (y - power(y, 3))
 
     def __init__(self, data):
         self.x0 = data["x0"]
@@ -34,7 +34,7 @@ class Solver:
                 res.insert(i, (x, self.y_exact(x)))
             except:
                 res.set_error(i)
-                res.insert(i, (x, np.NINF))
+                res.insert(i, (x, NaN))
             x += s
         return res
 
