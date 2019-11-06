@@ -42,7 +42,7 @@ class MainWindow:
         # 'Solutions' label
         self.frames[1][1] = Frame(self.root, background="bisque2", bd=5)
         self.frames[1][1].grid(row=1, column=1, sticky=N + S + E + W, columnspan=5)
-        solution_label = self._label(self.frames[1][1], text="Solutions")
+        self._label(self.frames[1][1], text="Solutions")
 
         # Solutions plot frame
         self.frames[2][1] = Frame(self.root, background="lightblue", bd=5)
@@ -64,7 +64,7 @@ class MainWindow:
         # 'Errors' label frame
         self.frames[6][1] = Frame(self.root, background="bisque2", bd=5)
         self.frames[6][1].grid(row=6, column=1, sticky=N + S + E + W, columnspan=5)
-        errors_label = self._label(self.frames[6][1], text="Errors")
+        self._label(self.frames[6][1], text="Errors")
 
         # Errors plot frame
         self.frames[7][1] = Frame(self.root, background="lightblue", bd=5)
@@ -164,13 +164,12 @@ class MainWindow:
             return data
         return dict()
 
-
     def solve(self):
         input_data = self.gather_data()
         try:
             solver = Solver(input_data)
-        except InvalidDataException as e:
-            messagebox.showerror("Error", e.strerror)
+        except SolverException as exception:
+            messagebox.showerror("Error", exception.strerror)
         else:
             print(solver)
             exact_solution = solver.solve_exact()
@@ -181,9 +180,9 @@ class MainWindow:
             self.solution_plotter.redraw(solutions)
             self.error_plotter.redraw(error)
             self.solution_plotter.widget.bind("<Button-1>",
-                                      lambda event: self.create_plot_in_a_new_window(solutions))
+                                              lambda event: self.create_plot_in_a_new_window(solutions))
             self.error_plotter.widget.bind("<Button-1>",
-                                   lambda event: self.create_plot_in_a_new_window(error))
+                                           lambda event: self.create_plot_in_a_new_window(error))
 
     def create_plot_in_a_new_window(self, datasets: list):
         new_window = Toplevel(self.root)

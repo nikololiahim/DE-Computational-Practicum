@@ -1,48 +1,65 @@
 from dataset import Dataset
-from numpy import e, pi, power, exp, log, sin, cos, sqrt, NaN
+from numpy import e, pi, power, exp, log, sin, cos, sqrt, NaN, float_, isnan, isinf
 
 
-class InvalidDataException(Exception):
-    def __init__(self, arg):
-        self.strerror = arg
-        self.args = (arg,)
+class SolverException(Exception):
+    def __init__(self, msg):
+        self.strerror = msg
+        self.args = (msg,)
+
+
+class YAxisDomainException(SolverException):
+    def __init__(self, msg):
+        super().__init__(msg)
+
+
+class IntervalException(SolverException):
+    def __init__(self, msg):
+        super().__init__(msg)
+
+
+class NumberOfStepsException(SolverException):
+    def __init__(self, msg):
+        super().__init__(msg)
+
+
+class ConstantException(SolverException):
+    def __init__(self, msg):
+        super().__init__(msg)
 
 
 class Solver:
 
-    @staticmethod
-    def valid(data):
-        if data["y0"] <= 0.0:
-            return False
-        if data["x0"] >= data["X"]:
-            return False
-        if not data["N"].is_integer():
-            return False
-        if int(data["N"]) <= 1:
-            return False
-        return True
+    def validate(self):
+        if self.y0 <= 0.0:
+            raise YAxisDomainException("Given value of y does not belong to the domain!")
+        if self.X - self.x0 <= 0:
+            raise IntervalException("Given [x0 ... X] interval doesn't exist!")
+        if self.N <= 1:
+            raise NumberOfStepsException("Given number of steps is invalid!")
+        if isnan(self.C) or isinf(self.C):
+            raise ConstantException("Value of constant is either too big or can not be calculated!")
 
     @staticmethod
-    def _c(x: float, y: float) -> float:
+    def _c(x: float, y: float) -> float_:
         return (1/power(y, 2) - 1) * exp(power(x, 2))
 
-    def y_exact(self, x: float) -> float:
+    def y_exact(self, x: float) -> float_:
         return 1 / sqrt(exp(-x*x) * self.C + 1)
 
     @staticmethod
-    def y_prime(x: float, y: float) -> float:
+    def y_prime(x: float, y: float) -> float_:
         return x * (y - power(y, 3))
 
     def __init__(self, data):
-        if not self.valid(data):
-            raise InvalidDataException("Data you've given is invalid!")
         self.x0 = data["x0"]
         self.y0 = data["y0"]
         self.X = data["X"]
         self.N = int(data["N"])
         self.method = int(data["method"])
         self.C = self._c(self.x0, self.y0)
-        self.step = abs(self.X-self.x0)/self.N
+        self.validate()
+        self.step = abs(self.X - self.x0) / self.N
 
     def solve_exact(self) -> Dataset:
         x = self.x0
