@@ -64,7 +64,24 @@ class MainWindow:
         # 'Errors' label frame
         self.frames[6][1] = Frame(self.root, background="bisque2", bd=5)
         self.frames[6][1].grid(row=6, column=1, sticky=N + S + E + W, columnspan=5)
-        self._label(self.frames[6][1], text="Errors")
+
+        self.frames[6][1].grid_columnconfigure(0, weight=10)
+        self.frames[6][1].grid_columnconfigure(1, weight=1)
+        self.frames[6][1].grid_rowconfigure(0, weight=1)
+        self.frames[6][1].grid_rowconfigure(1, weight=1)
+
+        left = Label(self.frames[6][1], text="Errors", font=self._FONT)
+        right = Frame(self.frames[6][1], bg="bisque2")
+        left.grid(row=0, column=0, sticky=N + S + E + W, rowspan=2)
+        right.grid(row=0, column=1, sticky=N + S + E + W, rowspan=2)
+
+        # switch button
+        self.switch = Button(right,
+                             text="Switch to:\ntotal error",
+                             font=("Consolas", 8),
+                             bg="gold",
+                             bd=5, command=self.switch_error)
+        self.switch.pack(expand=True, fill=BOTH)
 
         # Errors plot frame
         self.frames[7][1] = Frame(self.root, background="lightblue", bd=5)
@@ -133,6 +150,12 @@ class MainWindow:
         self._place_radiobox()
         self._place_button()
 
+        # initializing attributes for error type switching
+        self.error_flag = 1
+        self.local_error = Plotter.DEFAULT_DATA1
+        self.total_error = Plotter.DEFAULT_DATA2
+        self.current_error = self.local_error
+
         # binding up and down arrow keys for scrolling through methods
         self.root.bind("<Up>", lambda event: self.move_up())
         self.root.bind("<Down>", lambda event: self.move_down())
@@ -140,6 +163,17 @@ class MainWindow:
         # binding 'Enter' key to 'Apply' button action
         self.root.bind("<Return>", lambda event: self.apply.invoke())
 
+    # commands associated with widgets
+    def switch_error(self):
+        if self.error_flag == 1:
+            self.error_flag = 0
+            self.current_error = self.total_error
+            self.switch.configure(text="Switch to:\nlocal error")
+        else:
+            self.error_flag = 1
+            self.current_error = self.local_error
+            self.switch.configure(text="Switch to:\ntotal error")
+        self.error_plotter.redraw([self.current_error])
     def move_down(self):
         value = self.method_selected.get()
         self.method_selected.set(value + 1 if value < 3 else 1)
@@ -171,18 +205,22 @@ class MainWindow:
         except SolverException as exception:
             messagebox.showerror("Error", exception.strerror)
         else:
-            print(solver)
             exact_solution = solver.solve_exact()
-            numerical_solution_and_error = solver.solve_numerical()
-            numerical_solution = numerical_solution_and_error[0]
-            error = [numerical_solution_and_error[1]]
-            solutions = [exact_solution, numerical_solution]
+            numerical_solution_data = solver.solve_numerical()
+            solutions = [exact_solution, numerical_solution_data[0]]
+            self.local_error = numerical_solution_data[1]
+            self.error_flag = 1
+            self.switch.configure(text="Switch to:\ntotal error")
+            self.total_error = numerical_solution_data[2]
+            self.current_error = self.local_error
             self.solution_plotter.redraw(solutions)
-            self.error_plotter.redraw(error)
+            self.error_plotter.redraw([self.current_error])
+
+            # rebinding the left mouse button to redraw the graph in a new window for the given data
             self.solution_plotter.widget.bind("<Button-1>",
                                               lambda event: self.create_plot_in_a_new_window(solutions))
             self.error_plotter.widget.bind("<Button-1>",
-                                           lambda event: self.create_plot_in_a_new_window(error))
+                                           lambda event: self.create_plot_in_a_new_window([self.current_error]))
 
     def create_plot_in_a_new_window(self, datasets: list):
         new_window = Toplevel(self.root)
