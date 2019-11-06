@@ -35,7 +35,7 @@ class Solver:
         if self.y0 == 0.0:
             raise YAxisDomainException("Given value of y does not belong to the domain!")
         if self.X - self.x0 <= 0:
-            raise IntervalException("Given [x0 ... X] interval doesn't exist!")
+            raise IntervalException(f"Given [{self.x0} ... {self.X}] interval doesn't exist!")
         if self.N <= 1:
             raise NumberOfStepsException("Given number of steps is invalid!")
         if isnan(self.C) or isinf(self.C):
@@ -80,9 +80,9 @@ class Solver:
             self.method = self._solve_runge_kutta
 
         self.exact_solution = Dataset(self.N).add_name("Exact Solution")
-        self.numerical_solution = Dataset(self.N).add_name("Numerical Solution (" + self.method_name + ")")
-        self.local_error = Dataset(self.N).add_name("Local Error (" + self.method_name + ")")
-        self.total_error = Dataset(self.N).add_name("Total Error (" + self.method_name + ")")
+        self.numerical_solution = Dataset(self.N).add_name(f"Numerical Solution ({self.method_name})")
+        self.local_error = Dataset(self.N).add_name(f"Local Error ({self.method_name})")
+        self.total_error = Dataset(self.N).add_name(f"Total Error ({self.method_name})")
 
     def solve_exact(self):
         x = self.x0
@@ -165,6 +165,7 @@ class Solver:
             self.local_error.insert(i, (x, error))
 
     def get_total_error(self):
+        # TODO: fix bug with the curve
         N = self.N
         for i in range(2, N + 1):
             self.N = i
