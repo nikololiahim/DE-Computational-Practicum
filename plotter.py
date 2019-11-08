@@ -21,7 +21,10 @@ class Plotter:
         self._place(root)
 
     def plot(self, data: Dataset):
-        plot, = self.axes.plot(data.x_axis, data.y_axis, label=data.name)
+        plot, = self.axes.plot(data.x_axis, data.y_axis,
+                               label=data.name,
+                               marker='.',
+                               markersize=5)
         self.plots.append(plot)
         self.canvas.draw()
         return plot

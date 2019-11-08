@@ -1,5 +1,6 @@
 from dataset import Dataset
-from numpy import e, pi, power, exp, log, sin, cos, sqrt, NaN, float_, isnan, isinf, NINF, abs
+from numpy import e, pi, power, exp, log, sin, cos, sqrt
+import numpy as np
 
 
 class SolverException(Exception):
@@ -47,27 +48,37 @@ class Solver:
             raise IntervalException(f"Given [x0 ... X] interval doesn't exist!")
         if self.N <= 0:
             raise NumberOfStepsException("Given number of steps is invalid!")
-        if self.N <= self.M:
+        if self.N < self.M:
             raise NumberOfStepsException(f"Given interval [{self.M} ... {self.N}] is invalid!")
-        if isnan(self.C) or isinf(self.C):
+        if np.isnan(self.C) or np.isinf(self.C):
             raise ConstantException("Value of constant is either too big or can't be calculated!")
 
     @staticmethod
-    def _c(x0: float, y0: float) -> float_:
-        return (1 / power(y0, 2) - 1) * exp(power(x0, 2))
+    def _c(x0: float, y0: float) -> np.float_:
+        # return (1 / power(y0, 2) - 1) * exp(power(x0, 2))
+        # return exp(-y0 / x0) - x0
+        return y0 - exp(x0)
 
-    def y_exact_pos(self, x: float) -> float_:
-        return 1 / sqrt(exp(-x*x) * self.C + 1)
+    def y_exact_pos(self, x: float) -> np.float_:
+        # return 1 / sqrt(exp(-x*x) * self.C + 1)
+        return exp(x) + self.C
+        # return -x * log(x + self.C)
 
-    def y_exact_neg(self, x: float) -> float_:
-        return - 1 / sqrt(exp(-x * x) * self.C + 1)
+    def y_exact_neg(self, x: float) -> np.float_:
+        return exp(x) + self.C
+        # return - 1 / sqrt(exp(-x * x) * self.C + 1)
+        # return -x * log(x + self.C)
 
     def y_defined_at(self, x):
-        return exp(-x * x) * self.C + 1 > 0
+        # return exp(-x * x) * self.C + 1 > 0
+        # return x != 0
+        return True
 
     @staticmethod
-    def y_prime(x: float, y: float) -> float_:
-        return x * (y - power(y, 3))
+    def y_prime(x: float, y: float) -> np.float_:
+        # return x * (y - power(y, 3))
+        # return y / x - x * exp(y / x)
+        return y
 
     def __init__(self, data: dict):
         if not data:
@@ -88,13 +99,13 @@ class Solver:
 
         if self.method_code == 1:
             self.method_name = "Euler"
-            self.method = self._next_euler
+            self.next = self._next_euler
         elif self.method_code == 2:
             self.method_name = "Improved Euler"
-            self.method = self._next_improved_euler
+            self.next = self._next_improved_euler
         else:
             self.method_name = "Runge-Kutta"
-            self.method = self._next_runge_kutta
+            self.next = self._next_runge_kutta
 
         # initializing datasets
         self.exact_solution = Dataset(self.N + 1).set_name("Exact Solution")
@@ -128,18 +139,15 @@ class Solver:
         y = self.y0
         N = self.N
         h = self.step
-        if write:
-            self.numerical_solution.insert(0, (x, y))
-            self.local_error.insert(0, (x, 0))
-        for i in range(1, N + 1):
-            y = self.method(x, y, h)
-            x += h
+        for i in range(N + 1):
             y_exact = self.y_exact(x)
-            error = y_exact - self.method(x, y_exact, h)
-            _max_local_error = abs(error) if abs(error) > _max_local_error else _max_local_error
+            error = y_exact - self.next(x, y_exact, h)
+            _max_local_error = np.abs(error) if np.abs(error) > _max_local_error else _max_local_error
             if write:
                 self.numerical_solution.insert(i, (x, y))
                 self.local_error.insert(i, (x, error))
+            y = self.next(x, y, h)
+            x += h
         return _max_local_error
 
     def _next_euler(self, x: float, y: float, h: float) -> float:
@@ -163,7 +171,10 @@ class Solver:
         for i in range(self.M, N + 1):
             self.N = i
             self.step = (self.X - self.x0) / self.N
-            error = self.calculate_numerical()
+            error = self.calculate_numerical(write=False)
             self.total_error.insert(i - self.M, (i, error))
         self.N = N
         self.step = (self.X - self.x0) / self.N
+
+    def __str__(self):
+        return ""
