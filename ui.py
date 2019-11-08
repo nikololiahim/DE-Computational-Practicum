@@ -7,7 +7,7 @@ matplotlib.use("TkAgg")
 
 
 class MainWindow:
-    _VERSION = "4.0"
+    _VERSION = "5.0"
     _EULER = 1
     _IMPROVED_EULER = 2
     _RUNGE_KUTTA = 3
@@ -29,7 +29,7 @@ class MainWindow:
         self.root.state('zoomed')
 
     def _place_frames(self):
-        self.frames = [[Frame()] * 12 for i in range(12)]
+        self.frames = [[Frame()] * 12 for _ in range(12)]
         colors = ["white", "gray"]
         for i in range(12):
             for j in range(12):
@@ -79,7 +79,7 @@ class MainWindow:
         self.switch = Button(right,
                              text="Switch to:\ntotal error",
                              font=("Consolas", 8),
-                             bg="gold",
+                             bg="pink",
                              bd=5, command=self.switch_error)
         self.switch.pack(expand=True, fill=BOTH)
 
@@ -98,19 +98,20 @@ class MainWindow:
             )
 
     def _place_input_area(self):
-        names = ["x0", "y0", "X", "N"]
-        for i in range(2, 6):
-            self._label(self.frames[i][7], names[i - 2])
+        names = ["x0", "y0", "X", "M", "N"]
+        for i in range(1, 1 + len(names)):
+            self._label(self.frames[i][7], names[i - 1])
             self.frames[i][8] = Frame(self.root, background="bisque", bd=5)
             self.frames[i][8].grid(row=i, column=8, sticky=N + S + E + W, columnspan=3)
-            self.__setattr__(names[i - 2] + "_entry", self._entry(self.frames[i][8]))
+            self.__setattr__(names[i - 1] + "_entry", self._entry(self.frames[i][8]))
 
     # setting input fields to default values
     def _init_input_area(self):
         self.x0_entry.insert("0", "0")
         self.y0_entry.insert("0", "sqrt(1/2)")
         self.X_entry.insert("0", "3")
-        self.N_entry.insert("0", "20")
+        self.N_entry.insert("0", "200")
+        self.M_entry.insert("0", "20")
 
     def _place_radiobox(self):
         self.method_selected = IntVar()
@@ -120,7 +121,7 @@ class MainWindow:
             self.frames[i][8] = Frame(self.root, background="white", bd=5)
             self.frames[i][8].grid(row=i, column=7,
                                    sticky=N + S + E + W,
-                                   columnspan=3)
+                                   columnspan=4)
             Radiobutton(self.frames[i][8],
                         text=method_names[i - 7],
                         variable=self.method_selected,
@@ -132,7 +133,7 @@ class MainWindow:
         self.method_selected.set(self._EULER)
 
     def _place_button(self):
-        self.apply = Button(self.frames[10][9], text="Apply", command=self.solve, font=self._FONT)
+        self.apply = Button(self.frames[10][10], text="Apply", command=self.solve, font=self._FONT)
         self.apply.pack(expand=True, fill=BOTH)
 
     def __init__(self, root: Tk):
@@ -159,21 +160,21 @@ class MainWindow:
         # binding up and down arrow keys for scrolling through methods
         self.root.bind("<Up>", lambda event: self.move_up())
         self.root.bind("<Down>", lambda event: self.move_down())
+        self.root.bind("<Right>", lambda event: self.switch_error())
+        self.root.bind("<Left>", lambda event: self.switch_error())
 
         # binding 'Enter' key to 'Apply' button action
         self.root.bind("<Return>", lambda event: self.apply.invoke())
 
     # commands associated with widgets
     def switch_error(self):
-        if self.error_flag == 1:
-            self.error_flag = 0
-            self.current_error = self.total_error
-            self.switch.configure(text="Switch to:\nlocal error")
-        else:
-            self.error_flag = 1
-            self.current_error = self.local_error
-            self.switch.configure(text="Switch to:\ntotal error")
+        names = ["local", "total"]
+        errors = [self.total_error, self.local_error]
+        self.error_flag = ~self.error_flag
+        self.switch.configure(text=f"Switch to:\n{names[self.error_flag]} error")
+        self.current_error = errors[self.error_flag]
         self.error_plotter.redraw([self.current_error])
+
     def move_down(self):
         value = self.method_selected.get()
         self.method_selected.set(value + 1 if value < 3 else 1)
@@ -183,7 +184,7 @@ class MainWindow:
         self.method_selected.set(value - 1 if value > 1 else 3)
 
     def gather_data(self):
-        names = ["x0", "y0", "X", "N"]
+        names = ["x0", "y0", "X", "N", "M"]
         data = dict()
         for i in names:
             try:
@@ -193,8 +194,6 @@ class MainWindow:
                 break
         else:
             data['method'] = self.method_selected.get()
-            for i in data.keys():
-                print(i, data[i])
             return data
         return dict()
 
@@ -202,25 +201,25 @@ class MainWindow:
         input_data = self.gather_data()
         try:
             solver = Solver(input_data)
+            exact_solution = solver.solve_exact()
+        except NoDataException:
+            pass
         except SolverException as exception:
             messagebox.showerror("Error", exception.strerror)
         else:
-            exact_solution = solver.solve_exact()
             numerical_solution_data = solver.solve_numerical()
             solutions = [exact_solution, numerical_solution_data[0]]
             self.local_error = numerical_solution_data[1]
-            self.error_flag = 1
-            self.switch.configure(text="Switch to:\ntotal error")
             self.total_error = numerical_solution_data[2]
-            self.current_error = self.local_error
             self.solution_plotter.redraw(solutions)
-            self.error_plotter.redraw([self.current_error])
+            errors = [self.total_error, self.local_error]
+            self.error_plotter.redraw([errors[self.error_flag]])
 
             # rebinding the left mouse button to redraw the graph in a new window for the given data
             self.solution_plotter.widget.bind("<Button-1>",
                                               lambda event: self.create_plot_in_a_new_window(solutions))
             self.error_plotter.widget.bind("<Button-1>",
-                                           lambda event: self.create_plot_in_a_new_window([self.current_error]))
+                                           lambda event: self.create_plot_in_a_new_window([errors[self.error_flag]]))
 
     def create_plot_in_a_new_window(self, datasets: list):
         new_window = Toplevel(self.root)

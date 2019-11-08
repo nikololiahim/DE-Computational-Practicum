@@ -10,7 +10,8 @@ class Plotter:
     EMPTY_DATA = Dataset(1, zeros=True)
 
     def __init__(self, root):
-        self.figure = Figure(figsize=(2, 2), dpi=100)
+        self.figure = Figure(figsize=(1, 1), dpi=100)
+        self.figure.subplots_adjust(bottom=0.17, left=0.15)
         self.axes = self.figure.add_subplot(111)
         self.plots = []
 
@@ -31,6 +32,8 @@ class Plotter:
             self.plots[i].set_data(data[i].x_axis, data[i].y_axis)
             labels.append(data[i].name)
         self.legend = self.axes.legend(labels=labels, loc="upper left")
+        self.axes.set_xlabel(data[0].x_axis_name, horizontalalignment="right", x=1.0)
+        self.axes.set_ylabel(data[0].y_axis_name)
         self.axes.relim()
         self.axes.autoscale()
         self.canvas.draw()

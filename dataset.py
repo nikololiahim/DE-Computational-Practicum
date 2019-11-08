@@ -11,8 +11,9 @@ class Dataset:
             self.size = size
             self.x_axis = np.zeros(size)
             self.y_axis = np.zeros(size)
-        self.error = np.zeros(size)
         self.name = "Data"
+        self.x_axis_name = "X"
+        self.y_axis_name = "Y"
 
     def from_tuple(self, iterable: tuple):
         self.__init__(len(iterable[0]))
@@ -28,12 +29,10 @@ class Dataset:
         else:
             raise IndexError("Index is out of bounds!")
 
-    def set_error(self, index: int):
-        if -1 < index < self.size:
-            self.error[index] = 1
-        else:
-            raise IndexError("Index is out of bounds!")
-
-    def add_name(self, name):
+    def set_name(self, name):
         self.name = name
         return self
+
+    def set_axes_names(self, xname, yname):
+        self.x_axis_name = xname
+        self.y_axis_name = yname
