@@ -70,20 +70,21 @@ class Solver:
 
         if self.method_code == 1:
             self.method_name = "Euler"
-            self.method = self._solve_euler
+            self.method = self._next_euler
         elif self.method_code == 2:
             self.method_name = "Improved Euler"
-            self.method = self._solve_improved_euler
+            self.method = self._next_improved_euler
         else:
             self.method_name = "Runge-Kutta"
-            self.method = self._solve_runge_kutta
+            self.method = self._next_runge_kutta
 
+        # initializing datasets
         self.exact_solution = Dataset(self.N + 1).add_name("Exact Solution")
         self.numerical_solution = Dataset(self.N + 1).add_name(f"Numerical Solution ({self.method_name})")
         self.local_error = Dataset(self.N + 1).add_name(f"Local Error ({self.method_name})")
         self.total_error = Dataset(self.N).add_name(f"Total Error ({self.method_name})")
 
-    def solve_exact(self):
+    def solve_exact(self) -> Dataset:
         x = self.x0
         s = self.step
         for i in range(self.N + 1):
@@ -94,88 +95,54 @@ class Solver:
             x += s
         return self.exact_solution
 
-    def solve_numerical(self):
-        self.method()
+    def solve_numerical(self) -> tuple:
+        self.calculate_numerical()
         self.get_total_error()
         return self.numerical_solution, self.local_error, self.total_error
 
-    def _next_euler(self, x: float, y: float, h: float) -> float:
-        return y + h*self.y_prime(x, y)
-
-    def _solve_euler(self):
+    def calculate_numerical(self) -> float:
         _max_local_error = -1
         x = self.x0
         y = self.y0
         N = self.N
         h = self.step
-        self.numerical_solution.insert(0, (x, y))  # x0 = x0, y0 = y0
+        self.numerical_solution.insert(0, (x, y))
         self.local_error.insert(0, (x, 0))
         for i in range(1, N + 1):
-            y = self._next_euler(x, y, h)     # next y
-            x += h                            # next x
+            y = self.method(x, y, h)
+            x += h
             y_exact = self.y_exact(x)
-            error = y_exact - self._next_euler(x, y_exact, h)
+            error = y_exact - self.method(x, y_exact, h)
             _max_local_error = abs(error) if abs(error) > _max_local_error else _max_local_error
             self.numerical_solution.insert(i, (x, y))
             self.local_error.insert(i, (x, error))
         return _max_local_error
 
-    def _next_improved_euler(self, x, y, h):
+    def _next_euler(self, x: float, y: float, h: float) -> float:
+        return y + h * self.y_prime(x, y)
+
+    def _next_improved_euler(self, x, y, h) -> float:
         k1 = self.y_prime(x, y)
         k2 = self.y_prime(x + h, y + h * k1)
         return y + (h / 2) * (k1 + k2)
 
-    def _solve_improved_euler(self):
-        _max_local_error = -1
-        x = self.x0
-        y = self.y0
-        N = self.N
-        h = self.step
-        self.numerical_solution.insert(0, (x, y))  # x0 = x0, y0 = y0
-        self.local_error.insert(0, (x, 0))
-        for i in range(1, N + 1):
-            y = self._next_improved_euler(x, y, h)  # next y
-            x += h  # next x
-            y_exact = self.y_exact(x)
-            error = y_exact - self._next_improved_euler(x, y_exact, h)
-            _max_local_error = abs(error) if abs(error) > _max_local_error else _max_local_error
-            self.numerical_solution.insert(i, (x, y))
-            self.local_error.insert(i, (x, error))
-        return _max_local_error
-
-    def _next_runge_kutta(self, x, y, h):
+    def _next_runge_kutta(self, x, y, h) -> float:
         k1 = self.y_prime(x, y)
         k2 = self.y_prime(x + h / 2, y + (h / 2) * k1)
         k3 = self.y_prime(x + h / 2, y + (h / 2) * k2)
         k4 = self.y_prime(x + h, y + h * k3)
         return y + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
 
-    def _solve_runge_kutta(self):
-        _max_local_error = -1
-        x = self.x0
-        y = self.y0
-        N = self.N
-        h = self.step
-        self.numerical_solution.insert(0, (x, y))  # x0 = x0, y0 = y0
-        self.local_error.insert(0, (x, 0))
-        for i in range(1, N + 1):
-            y = self._next_runge_kutta(x, y, h)  # next y
-            x += h  # next x
-            y_exact = self.y_exact(x)
-            error = y_exact - self._next_runge_kutta(x, y_exact, h)
-            _max_local_error = abs(error) if abs(error) > _max_local_error else _max_local_error
-            self.numerical_solution.insert(i, (x, y))
-            self.local_error.insert(i, (x, error))
-        return _max_local_error
-
     def get_total_error(self):
         # TODO: fix bug with the curve
         N = self.N
         for i in range(1, N + 1):
             self.N = i
-            error = self.method()
+            self.step = (self.X - self.x0) / self.N
+            error = self.calculate_numerical()
             self.total_error.insert(i - 1, (i, error))
         self.N = N
+        self.step = (self.X - self.x0) / self.N
 
     def __str__(self):
         return f"{{x0: {self.x0},  " + \
