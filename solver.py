@@ -55,30 +55,30 @@ class Solver:
 
     @staticmethod
     def _c(x0: float, y0: float) -> np.float_:
-        # return (1 / power(y0, 2) - 1) * exp(power(x0, 2))
+        return (1 / power(y0, 2) - 1) * exp(power(x0, 2))
         # return exp(-y0 / x0) - x0
-        return y0 - exp(x0)
+        # return y0 - exp(x0)
 
     def y_exact_pos(self, x: float) -> np.float_:
-        # return 1 / sqrt(exp(-x*x) * self.C + 1)
-        return exp(x) + self.C
+        return 1 / sqrt(exp(-x * x) * self.C + 1)
+        # return exp(x) + self.C
         # return -x * log(x + self.C)
 
     def y_exact_neg(self, x: float) -> np.float_:
-        return exp(x) + self.C
-        # return - 1 / sqrt(exp(-x * x) * self.C + 1)
+        # return exp(x) + self.C
+        return - 1 / sqrt(exp(-x * x) * self.C + 1)
         # return -x * log(x + self.C)
 
     def y_defined_at(self, x):
-        # return exp(-x * x) * self.C + 1 > 0
+        return exp(-x * x) * self.C + 1 > 0
         # return x != 0
-        return True
+        # return True
 
     @staticmethod
     def y_prime(x: float, y: float) -> np.float_:
-        # return x * (y - power(y, 3))
+        return x * (y - power(y, 3))
         # return y / x - x * exp(y / x)
-        return y
+        # return y
 
     def __init__(self, data: dict):
         if not data:
@@ -139,15 +139,19 @@ class Solver:
         y = self.y0
         N = self.N
         h = self.step
+        prev_g_error = 0
         for i in range(N + 1):
             y_exact = self.y_exact(x)
-            error = y_exact - self.next(x, y_exact, h)
+            # error = y_exact - self.next(x, y_exact, h)
+            g_error = y_exact - y
+            error = prev_g_error - g_error
             _max_local_error = np.abs(error) if np.abs(error) > _max_local_error else _max_local_error
             if write:
                 self.numerical_solution.insert(i, (x, y))
                 self.local_error.insert(i, (x, error))
             y = self.next(x, y, h)
             x += h
+            prev_g_error = g_error
         return _max_local_error
 
     def _next_euler(self, x: float, y: float, h: float) -> float:
@@ -163,7 +167,7 @@ class Solver:
         k2 = self.y_prime(x + h / 2, y + (h / 2) * k1)
         k3 = self.y_prime(x + h / 2, y + (h / 2) * k2)
         k4 = self.y_prime(x + h, y + h * k3)
-        return y + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
+        return y + h * (k1 + 2 * k2 + 2 * k3 + k4) / 6
 
     def get_total_error(self):
         # TODO: fix bug with the curve

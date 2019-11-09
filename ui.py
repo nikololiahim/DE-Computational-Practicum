@@ -35,6 +35,7 @@ class MainWindow:
             for j in range(12):
                 self.frames[i][j] = Frame(self.root, background='linen', height=30, width=30)
                 self.frames[i][j].grid(row=i, column=j, sticky=N + S + E + W)
+                self.frames[i][j].bind("<Button-1>", lambda event: self.frames[i][j].focus_set())
                 self.root.grid_columnconfigure(j, weight=1)
                 self.root.grid_rowconfigure(i, weight=1)
 
@@ -79,7 +80,7 @@ class MainWindow:
         self.switch = Button(right,
                              text="Switch to:\ntotal error",
                              font=("Consolas", 8),
-                             bg="pink",
+                             bg="#EAB4A8",
                              bd=5, command=self.switch_error)
         self.switch.pack(expand=True, fill=BOTH)
 
@@ -168,12 +169,13 @@ class MainWindow:
 
     # commands associated with widgets
     def switch_error(self):
-        names = ["local", "total"]
-        errors = [self.total_error, self.local_error]
-        self.error_flag = ~self.error_flag
-        self.switch.configure(text=f"Switch to:\n{names[self.error_flag]} error")
-        self.current_error = errors[self.error_flag]
-        self.error_plotter.redraw([self.current_error])
+        if str(self.root.focus_get().__class__) != "<class 'tkinter.Entry'>":
+            names = ["local", "total"]
+            errors = [self.total_error, self.local_error]
+            self.error_flag = ~self.error_flag
+            self.switch.configure(text=f"Switch to:\n{names[self.error_flag]} error")
+            self.current_error = errors[self.error_flag]
+            self.error_plotter.redraw([self.current_error])
 
     def move_down(self):
         value = self.method_selected.get()
@@ -214,6 +216,7 @@ class MainWindow:
             self.solution_plotter.redraw(solutions)
             errors = [self.total_error, self.local_error]
             self.error_plotter.redraw([errors[self.error_flag]])
+            self.switch.focus_set()
 
             # rebinding the left mouse button to redraw the graph in a new window for the given data
             self.solution_plotter.widget.bind("<Button-1>",
