@@ -47,7 +47,7 @@ class Solver:
             raise YAxisDomainException("Given value of y does not belong to the domain!")
         if self.X - self.x0 <= 0:
             raise IntervalException(f"Given [x0 ... X] interval doesn't exist!")
-        if self.N <= 0 or self.M == 0:
+        if self.N <= 0 or self.M <= 0:
             raise NumberOfStepsException("Given number of steps is invalid!")
         if self.N < self.M:
             raise NumberOfStepsException(f"Given interval [{self.M} ... {self.N}] is invalid!")
