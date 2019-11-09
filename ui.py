@@ -1,13 +1,14 @@
 from tkinter import *
 from tkinter import messagebox
-from solver import *
+
 from plotter import *
+from solver import *
 
 matplotlib.use("TkAgg")
 
 
 class MainWindow:
-    _VERSION = "5.0"
+    _VERSION = "6.0"
     _EULER = 1
     _IMPROVED_EULER = 2
     _RUNGE_KUTTA = 3
@@ -30,7 +31,6 @@ class MainWindow:
 
     def _place_frames(self):
         self.frames = [[Frame()] * 12 for _ in range(12)]
-        colors = ["white", "gray"]
         for i in range(12):
             for j in range(12):
                 self.frames[i][j] = Frame(self.root, background='linen', height=30, width=30)

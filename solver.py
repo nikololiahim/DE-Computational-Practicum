@@ -1,6 +1,7 @@
-from dataset import Dataset
-from numpy import e, pi, power, exp, log, sin, cos, sqrt
 import numpy as np
+from numpy import power, exp, sqrt
+
+from dataset import Dataset
 
 
 class SolverException(Exception):
@@ -46,7 +47,7 @@ class Solver:
             raise YAxisDomainException("Given value of y does not belong to the domain!")
         if self.X - self.x0 <= 0:
             raise IntervalException(f"Given [x0 ... X] interval doesn't exist!")
-        if self.N <= 0:
+        if self.N <= 0 or self.M == 0:
             raise NumberOfStepsException("Given number of steps is invalid!")
         if self.N < self.M:
             raise NumberOfStepsException(f"Given interval [{self.M} ... {self.N}] is invalid!")
