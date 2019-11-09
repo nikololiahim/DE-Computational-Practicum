@@ -180,6 +180,3 @@ class Solver:
             self.total_error.insert(i - self.M, (i, error))
         self.N = N
         self.step = (self.X - self.x0) / self.N
-
-    def __str__(self):
-        return ""
