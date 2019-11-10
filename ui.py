@@ -138,8 +138,6 @@ class MainWindow:
         self.apply.pack(expand=True, fill=BOTH)
 
     def __init__(self, root: Tk):
-        # TODO: fix fonts and colors of labels
-
         self.root = root
         self._place_root()
         self._place_frames()

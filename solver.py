@@ -171,7 +171,6 @@ class Solver:
         return y + h * (k1 + 2 * k2 + 2 * k3 + k4) / 6
 
     def get_total_error(self):
-        # TODO: fix bug with the curve
         N = self.N
         for i in range(self.M, N + 1):
             self.N = i
