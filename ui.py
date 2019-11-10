@@ -57,8 +57,8 @@ class MainWindow:
         self.solution_plotter.\
             widget.bind(
                 "<Button-1>",
-                lambda event: self.create_plot_in_a_new_window([Plotter.DEFAULT_DATA1,
-                                                                Plotter.DEFAULT_DATA2])
+            lambda event: self._create_plot_in_a_new_window([Plotter.DEFAULT_DATA1,
+                                                             Plotter.DEFAULT_DATA2])
             )
 
     def _place_error_area(self):
@@ -81,7 +81,7 @@ class MainWindow:
                              text="Switch to:\ntotal error",
                              font=("Consolas", 8),
                              bg="#EAB4A8",
-                             bd=5, command=self.switch_error)
+                             bd=5, command=self._switch_error)
         self.switch.pack(expand=True, fill=BOTH)
 
         # Errors plot frame
@@ -95,7 +95,7 @@ class MainWindow:
         self.error_plotter. \
             widget.bind(
                 "<Button-1>",
-                lambda event: self.create_plot_in_a_new_window([Plotter.DEFAULT_DATA1])
+            lambda event: self._create_plot_in_a_new_window([Plotter.DEFAULT_DATA1])
             )
 
     def _place_input_area(self):
@@ -134,7 +134,7 @@ class MainWindow:
         self.method_selected.set(self._EULER)
 
     def _place_button(self):
-        self.apply = Button(self.frames[10][10], text="Apply", command=self.solve, font=self._FONT)
+        self.apply = Button(self.frames[10][10], text="Apply", command=self._solve, font=self._FONT)
         self.apply.pack(expand=True, fill=BOTH)
 
     def __init__(self, root: Tk):
@@ -157,16 +157,16 @@ class MainWindow:
         self.current_error = self.local_error
 
         # binding up and down arrow keys for scrolling through methods
-        self.root.bind("<Up>", lambda event: self.move_up())
-        self.root.bind("<Down>", lambda event: self.move_down())
-        self.root.bind("<Right>", lambda event: self.switch_error())
-        self.root.bind("<Left>", lambda event: self.switch_error())
+        self.root.bind("<Up>", lambda event: self._move_up())
+        self.root.bind("<Down>", lambda event: self._move_down())
+        self.root.bind("<Right>", lambda event: self._switch_error())
+        self.root.bind("<Left>", lambda event: self._switch_error())
 
         # binding 'Enter' key to 'Apply' button action
         self.root.bind("<Return>", lambda event: self.apply.invoke())
 
     # commands associated with widgets
-    def switch_error(self):
+    def _switch_error(self):
         if str(self.root.focus_get().__class__) != "<class 'tkinter.Entry'>":
             names = ["local", "total"]
             errors = [self.total_error, self.local_error]
@@ -175,15 +175,15 @@ class MainWindow:
             self.current_error = errors[self.error_flag]
             self.error_plotter.redraw([self.current_error])
 
-    def move_down(self):
+    def _move_down(self):
         value = self.method_selected.get()
         self.method_selected.set(value + 1 if value < 3 else 1)
 
-    def move_up(self):
+    def _move_up(self):
         value = self.method_selected.get()
         self.method_selected.set(value - 1 if value > 1 else 3)
 
-    def gather_data(self):
+    def _gather_data(self):
         names = ["x0", "y0", "X", "N", "M"]
         data = dict()
         for i in names:
@@ -197,32 +197,28 @@ class MainWindow:
             return data
         return dict()
 
-    def solve(self):
-        input_data = self.gather_data()
+    def _solve(self):
+        input_data = self._gather_data()
         try:
             solver = Solver(input_data)
             exact_solution = solver.solve_exact()
+            numerical_solution_data = solver.solve_numerical()
         except NoDataException:
             pass
         except SolverException as exception:
             messagebox.showerror("Error", exception.strerror)
         else:
-            numerical_solution_data = solver.solve_numerical()
             solutions = [exact_solution, numerical_solution_data[0]]
             self.local_error = numerical_solution_data[1]
             self.total_error = numerical_solution_data[2]
-            self.solution_plotter.redraw(solutions)
             errors = [self.total_error, self.local_error]
+            self.solution_plotter.redraw(solutions)
             self.error_plotter.redraw([errors[self.error_flag]])
-            self.switch.focus_set()
 
             # rebinding the left mouse button to redraw the graph in a new window for the given data
-            self.solution_plotter.widget.bind("<Button-1>",
-                                              lambda event: self.create_plot_in_a_new_window(solutions))
-            self.error_plotter.widget.bind("<Button-1>",
-                                           lambda event: self.create_plot_in_a_new_window([errors[self.error_flag]]))
+            self._rebind(solutions, errors)
 
-    def create_plot_in_a_new_window(self, datasets: list):
+    def _create_plot_in_a_new_window(self, datasets: list):
         new_window = Toplevel(self.root)
         new_window.title("Plot")
         new_window.state("zoomed")
@@ -233,3 +229,10 @@ class MainWindow:
         plotter.redraw(datasets)
         toolbar = NavigationToolbar2Tk(plotter.canvas, new_window)
         toolbar.pack()
+
+    def _rebind(self, solutions, errors):
+        self.switch.focus_set()
+        self.solution_plotter.widget.bind("<Button-1>",
+                                          lambda event: self._create_plot_in_a_new_window(solutions))
+        self.error_plotter.widget.bind("<Button-1>",
+                                       lambda event: self._create_plot_in_a_new_window([errors[self.error_flag]]))

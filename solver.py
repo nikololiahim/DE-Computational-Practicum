@@ -57,29 +57,19 @@ class Solver:
     @staticmethod
     def _c(x0: float, y0: float) -> np.float_:
         return (1 / power(y0, 2) - 1) * exp(power(x0, 2))
-        # return exp(-y0 / x0) - x0
-        # return y0 - exp(x0)
 
     def y_exact_pos(self, x: float) -> np.float_:
         return 1 / sqrt(exp(-x * x) * self.C + 1)
-        # return exp(x) + self.C
-        # return -x * log(x + self.C)
 
     def y_exact_neg(self, x: float) -> np.float_:
-        # return exp(x) + self.C
         return - 1 / sqrt(exp(-x * x) * self.C + 1)
-        # return -x * log(x + self.C)
 
     def y_defined_at(self, x):
         return exp(-x * x) * self.C + 1 > 0
-        # return x != 0
-        # return True
 
     @staticmethod
     def y_prime(x: float, y: float) -> np.float_:
         return x * (y - power(y, 3))
-        # return y / x - x * exp(y / x)
-        # return y
 
     def __init__(self, data: dict):
         if not data:
@@ -130,11 +120,11 @@ class Solver:
         return self.exact_solution
 
     def solve_numerical(self) -> tuple:
-        self.calculate_numerical()
-        self.get_total_error()
+        self._calculate_numerical()
+        self._get_total_error()
         return self.numerical_solution, self.local_error, self.total_error
 
-    def calculate_numerical(self, write=True) -> float:
+    def _calculate_numerical(self, write=True) -> float:
         _max_local_error = -1
         x = self.x0
         y = self.y0
@@ -143,7 +133,6 @@ class Solver:
         prev_g_error = 0
         for i in range(N + 1):
             y_exact = self.y_exact(x)
-            # error = y_exact - self.next(x, y_exact, h)
             g_error = y_exact - y
             error = prev_g_error - g_error
             _max_local_error = np.abs(error) if np.abs(error) > _max_local_error else _max_local_error
@@ -170,12 +159,12 @@ class Solver:
         k4 = self.y_prime(x + h, y + h * k3)
         return y + h * (k1 + 2 * k2 + 2 * k3 + k4) / 6
 
-    def get_total_error(self):
+    def _get_total_error(self):
         N = self.N
         for i in range(self.M, N + 1):
             self.N = i
             self.step = (self.X - self.x0) / self.N
-            error = self.calculate_numerical(write=False)
+            error = self._calculate_numerical(write=False)
             self.total_error.insert(i - self.M, (i, error))
         self.N = N
         self.step = (self.X - self.x0) / self.N
