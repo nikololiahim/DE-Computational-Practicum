@@ -14,7 +14,6 @@ class Dataset:
         self.name = "Data"
         self.x_axis_name = "X"
         self.y_axis_name = "Y"
-        self.y_lim = 0
 
     def from_tuple(self, iterable: tuple):
         self.__init__(len(iterable[0]))
