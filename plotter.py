@@ -1,6 +1,6 @@
-import matplotlib
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+
 from dataset import Dataset
 
 
@@ -22,9 +22,9 @@ class Plotter:
 
     def plot(self, data: Dataset):
         plot, = self.axes.plot(data.x_axis, data.y_axis,
-                               label=data.name,
-                               marker='.',
-                               markersize=5)
+                               label=data.name)
+        # marker='.',
+        # markersize=5)
         self.plots.append(plot)
         self.canvas.draw()
         return plot
@@ -37,8 +37,17 @@ class Plotter:
         self.legend = self.axes.legend(labels=labels, loc="upper left")
         self.axes.set_xlabel(data[0].x_axis_name, horizontalalignment="right", x=1.0)
         self.axes.set_ylabel(data[0].y_axis_name)
+
         self.axes.relim()
-        self.axes.autoscale()
+
+        if len(data) > 1:
+            ymin, ymax = data[0].ymin, data[0].ymax
+            offset = (ymax - ymin) / 10
+            self.axes.set_ylim(ymin - offset, ymax + offset)
+            self.axes.autoscale(axis="x")
+        else:
+            self.axes.autoscale()
+
         self.canvas.draw()
 
     def _place(self, where):

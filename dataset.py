@@ -14,6 +14,7 @@ class Dataset:
         self.name = "Data"
         self.x_axis_name = "X"
         self.y_axis_name = "Y"
+        self.y_lim = 0
 
     def from_tuple(self, iterable: tuple):
         self.__init__(len(iterable[0]))
@@ -36,3 +37,7 @@ class Dataset:
     def set_axes_names(self, xname, yname):
         self.x_axis_name = xname
         self.y_axis_name = yname
+
+    def set_ylim(self, _min, _max):
+        self.ymin = _min
+        self.ymax = _max
